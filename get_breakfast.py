@@ -41,9 +41,9 @@ def get_check_data(start, end):
         rows = get_check(cursor, start_time, end_time) # List of all query results
         for check in rows:
             sale_time = check[2]
-            if not check[1]: # No name
-                # print(check[0])
-                continue
+            # if not check[1]: # No name
+            #     # print(check[0])
+            #     continue
             if sale_time not in checks: 
                 checks[sale_time] = {'check_no' : check[0], 'check_name' : check[1].strip(), 'menu_ids' : {check[3] : int(check[4])}}
             else:
@@ -69,7 +69,7 @@ def get_check_data(start, end):
             if menu_id in breakfast_ids:
                 if check_data['check_no'] in cancelled_checks: # Skip adding items from cancelled checks
                     continue
-                for i in range(int(qty)):
+                for _ in range(int(qty)):
                     breakfast_items[breakfast_ids[menu_id]].append(sale_time)
     return breakfast_items
 
