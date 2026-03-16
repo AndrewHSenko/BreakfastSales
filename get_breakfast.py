@@ -15,16 +15,17 @@ breakfast_ids = {
     # 9543 : 'Vanilla Yogurt'
 }
 
-def get_check(start, end):
-    query = f'''
+def get_check(cursor, start, end):
+    query = '''
     SELECT ch.CheckNo, ct.Name, ci.SaleTime, ci.MenuID, ci.Quantity
     FROM ((Squirrel.dbo.X_CheckHeader AS ch
     JOIN Squirrel.dbo.X_CheckTable AS ct ON ch.CheckID = ct.CheckID)
     JOIN Squirrel.dbo.X_CheckItem AS ci ON ch.CheckID = ci.CheckID)
-    WHERE ci.SaleTime BETWEEN '{start}' AND '{end}'
+    WHERE ci.SaleTime BETWEEN ? AND ?
     ORDER BY ci.SaleTime ASC
     '''
-    return query
+    cursor.execute(query, start, end)
+    return cursor.fetchall() # Could iterate using fetchone, but # of rows should never be too large
 
 def get_check_data(start, end):
     load_dotenv()
@@ -37,8 +38,7 @@ def get_check_data(start, end):
         cursor = conn.cursor()
         start_time = datetime.strptime(start, '%Y%m%d%H%M%S')
         end_time = datetime.strptime(end, '%Y%m%d%H%M%S')
-        cursor.execute(get_check(start_time, end_time))
-        rows = cursor.fetchall() # Could iterate using fetchone, but # of rows should never be too large
+        rows = get_check(cursor, start_time, end_time) # List of all query results
         for check in rows:
             sale_time = check[2]
             if not check[1]: # No name
@@ -51,8 +51,7 @@ def get_check_data(start, end):
                     checks[sale_time]['menu_ids'][check[3]] += check[4]
                 else:
                     checks[sale_time]['menu_ids'][check[3]] = check[4]
-        cursor.execute(cc.get_cancelled_checks(start_time, end_time))
-        cc_rows = cursor.fetchall()
+        cc_rows = cc.get_cancelled_checks(cursor, start_time, end_time)
         for check in cc_rows:
             check_no = check[1] # Key will be check_no for easier parsing
             if check_no not in cancelled_checks: 
